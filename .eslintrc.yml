@@ -1,6 +1,6 @@
 plugins:
   - jest
-  - fp
+  # - fp
 
 env:
   jest: true
@@ -10,25 +10,27 @@ env:
 extends:
   - airbnb-base
   - "plugin:jest/recommended"
-  - "plugin:fp/recommended"
+  # - "plugin:fp/recommended"
 
 # Включает поддержку конструкции import.meta.url
 parserOptions:
   ecmaVersion: 2020
 
+ignorePatterns: ["downloads", "__fixtures__"]
+  
 rules:
   no-console: 0
   import/extensions: 0 # FIXME: remove when rule will be adjusted for new nodejs version
   no-underscore-dangle: [2, { "allow": ["__filename", "__dirname"] }]
-  fp/no-nil: 0
-  fp/no-unused-expression: 0
-  fp/no-throw: 0
-  fp/no-let: 0
+  # fp/no-nil: 0
+  # fp/no-unused-expression: 0
+  # fp/no-throw: 0
+  # fp/no-let: 0
   # fp/no-mutating-methods:
   #   - error
   #   - allowedObjects:
   #     - "_"
-  fp/no-mutation: 0
+  # fp/no-mutation: 0
   #   - error
   #   - exceptions:
   #     - object: result

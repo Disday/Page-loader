@@ -1,4 +1,4 @@
-import { readFile, mkdtemp, stat } from 'fs/promises';
+import { readFile, mkdtemp } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import os from 'os';
@@ -27,7 +27,7 @@ test('successful request', async () => {
   expect(scope.isDone()).toBe(true);
 
   const data = await readFile(filePath);
-  const expectedPath = path.join(tmpDir, 'yandex-ru-news_files', 'yandex-ru-news.html');
+  const expectedPath = path.join(tmpDir, 'yandex-ru-news.html');
   expect(filePath).toEqual(expectedPath);
   expect(data).toBeDefined();
 });
@@ -36,27 +36,47 @@ test('fail request', async () => {
   const scope = nock('http://yandex.ru')
     .get('/kahsdhluasgdfasgdfa8ldgfa8sd')
     .reply(404, {});
-  const response = await loadPage('http://yandex.ru/kahsdhluasgdfasgdfa8ldgfa8sd', tmpDir);
+  const { response } = await loadPage('http://yandex.ru/kahsdhluasgdfasgdfa8ldgfa8sd', tmpDir);
   expect(scope.isDone()).toBe(true);
-  expect(response.includes('Request failed')).toBe(true);
+  expect(response.status).toEqual(404);
 });
 
-test('images download', async () => {
-  const sourceFixture = await readFile(buildFixturePath('source.html'));
-  const imgFixture = await readFile(buildFixturePath('logo.png'));
-  const scope = nock('https://ru.hexlet.io')
-    .get('/courses')
-    .reply(200, sourceFixture)
-    .get('/assets/professions/nodejs.png')
-    .reply(200, imgFixture);
+test('resources download', async () => {
+  const fixturesMap = [
+    ['/courses', 'source.html'],
+    ['/courses', 'source.html'],
+    ['/assets/professions/nodejs.png', 'logo.png', 'ru-hexlet-io-assets-professions-nodejs.png'],
+    ['/assets/application.css', 'app.css', 'ru-hexlet-io-assets-application.css'],
+    ['/packs/js/runtime.js', 'runtime.js', 'ru-hexlet-io-packs-js-runtime.js'],
+  ];
 
-  const resultPath = await loadPage('https://ru.hexlet.io/courses', tmpDir);
-  const resultContent = await readFile(resultPath);
-  const resultFixture = await readFile(buildFixturePath('result.html'));
+  const fixtures = await Promise.all(
+    fixturesMap.map(([, fixtureName]) => readFile(buildFixturePath(fixtureName))),
+  );
+  const scope = nock('https://ru.hexlet.io');
+  fixtures.forEach((fixture, i) => {
+    const [requestPath] = fixturesMap[i];
+    scope.get(requestPath).reply(200, fixture);
+  });
+  //  test html content
+  const htmlPath = await loadPage('https://ru.hexlet.io/courses', tmpDir);
   expect(scope.isDone()).toBe(true);
-  expect(resultContent).toEqual(resultFixture);
-  // console.log(resultPath);
-  const expectedPath = path.join(tmpDir, 'ru-hexlet-io-courses_files/ru-hexlet-io-assets-professions-nodejs.png');
-  const fileStat = await stat(expectedPath);
-  expect(fileStat).toBeDefined();
+  const htmlContent = await readFile(htmlPath);
+  const htmlFixture = await readFile(buildFixturePath('result.html'));
+  expect(htmlContent).toEqual(htmlFixture);
+
+  //  test resources
+  const dir = path.join(tmpDir, 'ru-hexlet-io-courses_files');
+  const stats = await Promise.all(
+    fixturesMap.map(([, , filename]) => {
+      if (!filename) {
+        return null;
+      }
+      return readFile(path.join(dir, filename));
+    }),
+  );
+
+  stats.forEach((stat) => {
+    expect(stat).toBeDefined();
+  });
 });

@@ -12,8 +12,8 @@ app
   .arguments('<url>')
   .action((url, options) => {
     loadPage(url, options.output)
-      .then((path) => console.log(path));
-    // .catch((e) => console.log(e.message));
+      .then((path) => console.log(path))
+      .catch((e) => console.log(e.message));
   });
 
 app.parse();
