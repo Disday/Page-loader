@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "npx -n --experimental-vm-modules jest"
+    "test": "npx -n --experimental-vm-modules jest -e"
   },
   "repository": {
     "type": "git",
@@ -31,11 +31,10 @@
   },
   "devDependencies": {
     "axios-debug-log": "^0.8.4",
-    "eslint": "^8.20.0",
+    "eslint": "^8.21.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-fp": "^2.3.0",
     "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jest": "^26.6.0",
+    "eslint-plugin-jest": "^26.8.2",
     "jest": "^28.1.3"
   }
 }

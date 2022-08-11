@@ -6,7 +6,7 @@ import Listr from 'listr';
 import debug from 'debug';
 
 const log = debug('page-loader');
-const defaultDir = `${process.cwd()}/downloads`;
+// const defaultDir = `${process.cwd()}/downloads`;
 
 const generateFilepath = ({ host, pathname }, dir, incomingExt = '.html') => {
   const base = ''.concat(
@@ -15,6 +15,7 @@ const generateFilepath = ({ host, pathname }, dir, incomingExt = '.html') => {
   );
   const { name, ext: baseExt } = path.parse(base);
   const ext = baseExt || incomingExt;
+  // const ext = baseExt === '' ? incomingExt : baseExt;
   return path.join(dir, `${name}${ext}`);
 };
 
@@ -41,17 +42,17 @@ const replaceLinks = (html, host, dir) => {
   $('img, link, script').each((i, elem) => {
     const linkAttr = elem.name === 'link' ? 'href' : 'src';
     const link = $(elem).attr(linkAttr);
-    const { ext } = path.parse(link);
+    // const { ext } = path.parse(link);
     const url = new URL(link, host);
     const baseUrl = new URL(host);
-    // log(url.origin)
-    // log(host)
-    // log(baseUrl.hostname)
-    const isLocalLink = ext && url.hostname === baseUrl.hostname;
+    const isLocalLink = link && url.hostname === baseUrl.hostname;
     if (isLocalLink) {
       const newLink = generateFilepath(url, dir);
-      urls = [...urls, url];
       $(elem).prop(linkAttr, newLink);
+      // log(url.href)
+      urls = [...urls, url];
+      // if (ext) {
+      // }
     }
   });
 
@@ -62,16 +63,18 @@ const saveResources = (responses, dirpath) => {
   const promises = responses.map(({ config, data }) => {
     const url = new URL(config.url);
     const filepath = generateFilepath(url, dirpath);
+    // log(filepath)
     return writeFile(filepath, data);
   });
 
   return Promise.all(promises);
 };
 
-export default async (uri, outputDir = defaultDir) => {
+export default async (uri, outputDir = process.cwd()) => {
   const url = new URL(uri);
   const dirpath = generateFilepath(url, outputDir, '_files');
   const htmlPath = generateFilepath(url, outputDir);
+  log(outputDir);
 
   let html;
   return axios.get(url.href)
