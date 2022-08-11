@@ -10,10 +10,12 @@ lint:
 test:
 	npm test
 
+test-debug:
+	DEBUG=nock.scope*,page-loader npm test
+
 test-coverage:
 	npm test -- --coverage --coverageProvider=v8
 	
-make debug:
-	node --inspect ./bin/page-loader.js $(url)
-
-# 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
+debug:
+	DEBUG=axios,page-loader node --inspect --require axios-debug-log  ./bin/page-loader.js $(url)
+#  node  [entrypoint.js]
