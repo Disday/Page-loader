@@ -17,6 +17,7 @@ extends:
   - 'airbnb-base'
   - 'plugin:jest/recommended'
 
+ignorePatterns: ["downloads", "__fixtures__"]
 rules:
   no-console: 0
   import/extensions: 0

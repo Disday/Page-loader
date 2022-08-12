@@ -14,7 +14,7 @@ i18n.init({
 const app = new Command();
 // const log = debug('page-loader');
 
-const getMessage = (e, output) => {
+const getMessage = (e) => {
   if (e.constructor.name === 'AxiosError') {
     return i18n.t('downloadError', { url: e.config.url });
   }
@@ -22,7 +22,7 @@ const getMessage = (e, output) => {
   const messageMap = {
     ERR_INVALID_URL: i18n.t('downloadError', { url: input }),
     EEXIST: i18n.t('fileExists', { path }),
-    ENOENT: i18n.t('noOutputDir', { output }),
+    // ENOENT: i18n.t('noOutputDir', { output }),
     EACCES: i18n.t('noAccessToDir', { path }),
   };
   return messageMap[code];
@@ -37,9 +37,9 @@ app
     loadPage(url, output)
       .then((path) => console.log(path))
       .catch((e) => {
-        const message = getMessage(e, output);
+        // log(12)
+        const message = getMessage(e, output) ?? e.message;
         console.error(message);
-        // console.log(process.exitCode);
         process.exit(1);
       });
   });

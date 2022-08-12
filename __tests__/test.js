@@ -4,7 +4,6 @@ import path from 'path';
 import os from 'os';
 import nock from 'nock';
 import loadPage from '../index.js';
-// import { diff } from 'jest-diff';
 
 let tmpDir;
 const __filename = fileURLToPath(import.meta.url);
@@ -19,27 +18,7 @@ beforeEach(async () => {
   tmpDir = await mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
 });
 
-test('hexlet test', async () => {
-  const source = await readFile(buildFixturePath('hexlet/site-com-blog-about.html'));
-  const htmlFixture = await readFile(buildFixturePath('hexlet/expected/site-com-blog-about.html'), { encoding: 'utf-8' });
-  const scope = nock('https://site.com')
-    .get('/blog/about')
-    .reply(200, source)
-    .get('/blog/about')
-    .reply(200, source)
-    .get('/blog/about/assets/styles.css')
-    .reply(200, {})
-    .get('/photos/me.jpg')
-    .reply(200, {})
-    .get('/assets/scripts.js')
-    .reply(200, {});
-  const htmlPath = await loadPage('https://site.com/blog/about', tmpDir);
-  expect(scope.isDone()).toBe(true);
-  const htmlContent = await readFile(htmlPath, { encoding: 'utf-8' });
-  expect(htmlContent).toEqual(htmlFixture);
-});
-
-test('resources download', async () => {
+test('main positive test', async () => {
   const fixturesMap = [
     ['/courses', 'source.html'],
     ['/courses', 'source.html'],
@@ -58,19 +37,18 @@ test('resources download', async () => {
   });
   // test html content
   const htmlPath = await loadPage('https://ru.hexlet.io/courses', tmpDir);
-  expect(scope.isDone()).toBe(true);
   const htmlFixture = await readFile(buildFixturePath('result.html'), { encoding: 'utf-8' });
   const htmlContent = await readFile(htmlPath, { encoding: 'utf-8' });
+  expect(scope.isDone()).toBe(true);
   expect(htmlContent).toEqual(htmlFixture);
-
   // test resources
   const dir = path.join(tmpDir, 'ru-hexlet-io-courses_files');
   const stats = await Promise.all(
     fixturesMap.map(([, , filename]) => {
-      if (!filename) {
-        return null;
+      if (filename) {
+        return readFile(path.join(dir, filename));
       }
-      return readFile(path.join(dir, filename));
+      return null;
     }),
   );
 
@@ -86,7 +64,7 @@ describe('wrong links', () => {
       .reply(404);
 
     expect.assertions(2);
-    await expect(loadPage('http://test.io/wrongPath', tmpDir)).rejects.toThrow();
+    await expect(loadPage('http://test.io/wrongPath')).rejects.toThrow();
     expect(scope.isDone()).toBe(true);
   });
 
@@ -111,7 +89,7 @@ describe('filesystem errors', () => {
       .reply(200);
 
     expect.assertions(1);
-    await expect(loadPage('http://test.io/news', path.join(tmpDir, 'nonExistentDir'))).rejects.toThrow();
+    await expect(loadPage('http://test.io/news', 'nonExistentDir')).rejects.toThrow();
   });
 
   test('denied access dir', async () => {
