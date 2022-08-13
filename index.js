@@ -65,48 +65,50 @@ const saveResources = (responses, dirpath) => {
   return Promise.all(promises);
 };
 
-export default async (uri, outputDir = process.cwd()) => {
+export default async (uri, outputDir = process.cwd(), rl = readline) => {
+  log();
   const normalizedUri = uri.includes('http') ? uri : `http://${uri}`;
   const url = new URL(normalizedUri);
-  // log(url)
   const dirpath = generateFilepath(url, outputDir, '_files');
   const htmlPath = generateFilepath(url, outputDir);
 
-  const resources = {};
+  const makePrompt = (e, dir) => {
+    const map = {
+      ENOENT: {
+        result: () => mkdir(dir),
+        question: 'noOutputDir',
+      },
+      EEXIST: {
+        result: () => true,
+        question: 'fileExists',
+      },
+    };
+    const isUnwatchedError = ({ code }) => !Object.keys(map).includes(code);
+    if (isUnwatchedError(e)) {
+      throw e;
+    }
+
+    const { result, question } = map[e.code];
+    const message = i18n.t(question, { path: dir });
+    const answer = rl.question(message);
+    if (answer.toLowerCase() === 'y') {
+      return result();
+    }
+
+    throw Error('Aborted');
+  };
+
   return stat(outputDir)
-    .catch(() => {
-      const message = i18n.t('noOutputDir', { path: outputDir });
-      const answer = readline.question(message);
-      if (answer.toLowerCase() === 'y') {
-        return mkdir(outputDir);
-      }
-
-      throw Error('Aborted');
-    })
+    .catch((e) => makePrompt(e, outputDir))
     .then(() => mkdir(dirpath))
-    .catch((e) => {
-      if (e.message === 'Aborted') {
-        throw e;
-      }
-      const message = i18n.t('fileExists', { path: outputDir });
-      const answer = readline.question(message);
-      if (answer.toLowerCase() === 'y') {
-        return true;
-      }
-
-      throw Error('Aborted');
-    })
+    .catch((e) => makePrompt(e, dirpath))
     .then(() => axios.get(url.href))
     .then(({ data }) => {
-      resources.html = data;
+      const { updatedHtml, urls } = replaceLinks(data, url.href, dirpath);
+      writeFile(htmlPath, updatedHtml);
+      return urls;
     })
-    .then(() => {
-      log('here');
-      const { updatedHtml, urls } = replaceLinks(resources.html, url.href, dirpath);
-      resources.urls = urls;
-      return writeFile(htmlPath, updatedHtml);
-    })
-    .then(() => downloadResources(resources.urls))
+    .then((urls) => downloadResources(urls))
     .then((responses) => saveResources(responses, dirpath))
     .then(() => htmlPath);
 };

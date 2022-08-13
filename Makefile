@@ -5,13 +5,13 @@ publish:
 	npm publish --dry-run
 
 lint:
-	npx eslint .
+	npx eslint . --fix
 
 test:
 	npm test
 
 test-debug:
-	DEBUG=nock.scope*,page-loader npm test
+	DEBUG=page-loader npm test
 
 test-coverage:
 	npm test -- --coverage --coverageProvider=v8

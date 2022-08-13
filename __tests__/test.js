@@ -1,8 +1,11 @@
-import { readFile, mkdtemp, mkdir } from 'fs/promises';
+import {
+  readFile, mkdtemp, mkdir, rm,
+} from 'fs/promises';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import os from 'os';
 import nock from 'nock';
+// import { jest } from '@jest/globals';
 import loadPage from '../index.js';
 
 let tmpDir;
@@ -64,7 +67,7 @@ describe('wrong links', () => {
       .reply(404);
 
     expect.assertions(2);
-    await expect(loadPage('http://test.io/wrongPath')).rejects.toThrow();
+    await expect(loadPage('http://test.io/wrongPath', tmpDir)).rejects.toThrow();
     expect(scope.isDone()).toBe(true);
   });
 
@@ -88,8 +91,14 @@ describe('filesystem errors', () => {
       .get('/news')
       .reply(200);
 
-    expect.assertions(1);
-    await expect(loadPage('http://test.io/news', 'nonExistentDir')).rejects.toThrow();
+    expect.assertions(2);
+    const dir = path.join(tmpDir, 'nonExistentDir');
+    const readlineYes = { question: () => 'y' };
+    await expect(loadPage('http://test.io/news', dir, readlineYes)).resolves.not.toThrow();
+    await rm(dir, { recursive: true });
+
+    const readlineNo = { question: () => 'n' };
+    await expect(loadPage('http://test.io/news', dir, readlineNo)).rejects.toThrow();
   });
 
   test('denied access dir', async () => {
@@ -107,8 +116,11 @@ describe('filesystem errors', () => {
       .get('/news')
       .reply(200);
 
-    expect.assertions(1);
+    expect.assertions(2);
     await mkdir(path.join(tmpDir, 'test-io-news_files'));
-    await expect(loadPage('http://test.io/news', tmpDir)).rejects.toThrow();
+    const readlineYes = { question: () => 'y' };
+    await expect(loadPage('http://test.io/news', tmpDir, readlineYes)).resolves.not.toThrow();
+    const readlineNo = { question: () => 'n' };
+    await expect(loadPage('http://test.io/news', tmpDir, readlineNo)).rejects.toThrow();
   });
 });
