@@ -1,0 +1,5 @@
+node_modules
+downloads
+.vscode
+coverage
+__fixtures__/hexlet

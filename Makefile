@@ -18,4 +18,7 @@ test-coverage:
 	
 debug:
 	DEBUG=axios,page-loader node --inspect --require axios-debug-log  ./bin/page-loader.js $(url)
-#  node  [entrypoint.js]
+
+docker:
+	docker build -t page-loader .
+	docker run -it page-loader bash -lic 'page-loader rambler.ru; bash'

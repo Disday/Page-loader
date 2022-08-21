@@ -3,7 +3,7 @@
 import { Command } from 'commander/esm.mjs';
 // import debug from 'debug';
 import i18n from 'i18next';
-import loadPage from '../index.js';
+import loadPage from '../src/index.js';
 import en from '../locales/en.js';
 
 i18n.init({
@@ -37,7 +37,6 @@ app
     loadPage(url, output)
       .then((path) => console.log(path))
       .catch((e) => {
-        // log(12)
         const message = getMessage(e, output) ?? e.message;
         console.error(message);
         process.exit(1);

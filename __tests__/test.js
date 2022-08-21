@@ -6,7 +6,7 @@ import path from 'path';
 import os from 'os';
 import nock from 'nock';
 // import { jest } from '@jest/globals';
-import loadPage from '../index.js';
+import loadPage from '../src/index.js';
 
 let tmpDir;
 const __filename = fileURLToPath(import.meta.url);
@@ -93,12 +93,12 @@ describe('filesystem errors', () => {
 
     expect.assertions(2);
     const dir = path.join(tmpDir, 'nonExistentDir');
-    const readlineYes = { question: () => 'y' };
-    await expect(loadPage('http://test.io/news', dir, readlineYes)).resolves.not.toThrow();
+    // const readlineYes = { question: () => 'y' };
+    await expect(loadPage('http://test.io/news', dir, 'y')).resolves.not.toThrow();
     await rm(dir, { recursive: true });
 
-    const readlineNo = { question: () => 'n' };
-    await expect(loadPage('http://test.io/news', dir, readlineNo)).rejects.toThrow();
+    // const readlineNo = { question: () => 'n' };
+    await expect(loadPage('http://test.io/news', dir, 'n')).rejects.toThrow();
   });
 
   test('denied access dir', async () => {
@@ -118,9 +118,9 @@ describe('filesystem errors', () => {
 
     expect.assertions(2);
     await mkdir(path.join(tmpDir, 'test-io-news_files'));
-    const readlineYes = { question: () => 'y' };
-    await expect(loadPage('http://test.io/news', tmpDir, readlineYes)).resolves.not.toThrow();
-    const readlineNo = { question: () => 'n' };
-    await expect(loadPage('http://test.io/news', tmpDir, readlineNo)).rejects.toThrow();
+    // const readlineYes = { question: () => 'y' };
+    await expect(loadPage('http://test.io/news', tmpDir, 'y')).resolves.not.toThrow();
+    // const readlineNo = { question: () => 'n' };
+    await expect(loadPage('http://test.io/news', tmpDir, 'n')).rejects.toThrow();
   });
 });

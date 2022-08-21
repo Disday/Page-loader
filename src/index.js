@@ -65,43 +65,48 @@ const saveResources = (responses, dirpath) => {
   return Promise.all(promises);
 };
 
-export default async (uri, outputDir = process.cwd(), rl = readline) => {
-  log();
+const askUser = (e, dir) => {
+  const map = {
+    ENOENT: {
+      result: () => mkdir(dir),
+      question: 'noOutputDir',
+    },
+    EEXIST: {
+      result: () => true,
+      question: 'fileExists',
+    },
+  };
+  const isUnwatchedError = ({ code }) => !Object.keys(map).includes(code);
+  if (isUnwatchedError(e)) {
+    throw e;
+  }
+
+  const { result, question } = map[e.code];
+  const message = i18n.t(question, { path: dir });
+  const answer = readline.question(message);
+  if (answer.toLowerCase() === 'y') {
+    return result();
+  }
+
+  throw Error('Aborted');
+};
+
+export default async (uri, outputDir = process.cwd(), userAnswer = null) => {
+  log('run');
+  // monkey patch for tests only
+  if (userAnswer) {
+    readline.question = () => userAnswer;
+  }
+
   const normalizedUri = uri.includes('http') ? uri : `http://${uri}`;
   const url = new URL(normalizedUri);
   const dirpath = generateFilepath(url, outputDir, '_files');
   const htmlPath = generateFilepath(url, outputDir);
 
-  const makePrompt = (e, dir) => {
-    const map = {
-      ENOENT: {
-        result: () => mkdir(dir),
-        question: 'noOutputDir',
-      },
-      EEXIST: {
-        result: () => true,
-        question: 'fileExists',
-      },
-    };
-    const isUnwatchedError = ({ code }) => !Object.keys(map).includes(code);
-    if (isUnwatchedError(e)) {
-      throw e;
-    }
-
-    const { result, question } = map[e.code];
-    const message = i18n.t(question, { path: dir });
-    const answer = rl.question(message);
-    if (answer.toLowerCase() === 'y') {
-      return result();
-    }
-
-    throw Error('Aborted');
-  };
-
   return stat(outputDir)
-    .catch((e) => makePrompt(e, outputDir))
+    .catch((e) => askUser(e, outputDir))
     .then(() => mkdir(dirpath))
-    .catch((e) => makePrompt(e, dirpath))
+    .catch((e) => askUser(e, dirpath))
     .then(() => axios.get(url.href))
     .then(({ data }) => {
       const { updatedHtml, urls } = replaceLinks(data, url.href, dirpath);
