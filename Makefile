@@ -1,8 +1,6 @@
 install:
 	npm ci
-
-publish:
-	npm publish --dry-run
+	sudo npm link .
 
 lint:
 	npx eslint . --fix
@@ -21,4 +19,4 @@ debug:
 
 docker:
 	docker build -t page-loader .
-	docker run -it page-loader bash -lic 'page-loader rambler.ru; bash'
+	docker run -it page-loader bash -lic 'page-loader --help; bash'
